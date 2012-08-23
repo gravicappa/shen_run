@@ -9,27 +9,21 @@
 #include <errno.h>
 #include <signal.h>
 
+#include "config.h"
+
 pid_t pid;
 
-char *command[] = {"shen-cl", 0};
-char *start_expr = "(set shen-*history* [])\n";
-char *exit_expr = "(QUIT)\n";
-char *main_func = "main";
-char *confname = ".shen.shen";
-char *conf = 0;
-char *run_expr = "(use-modules [run])\n";
-
 void
-usage(const char *argv0) 
+usage(const char *argv0)
 {
-  fprintf(stderr, "Usage: %s [file.shen]\n", argv0);
+  fprintf(stderr, "Usage: %s [-nc] [file.shen]\n", argv0);
 }
 
 int
-init_shen(int fd, int argc, char **argv)
+load_conf(int fd)
 {
-  char buf[1024], *home, *s;
-  int i, n = 0;
+  char buf[1024], *home;
+  int n;
 
   if (conf)
     n = snprintf(buf, sizeof(buf), "(load \"%s\")\n", conf);
@@ -41,12 +35,22 @@ init_shen(int fd, int argc, char **argv)
   }
   if (write(fd, buf, n) < 0)
     return -1;
+}
+
+int
+init_shen(int fd, int argc, char **argv)
+{
+  char buf[1024], *s;
+  int i, n = 0;
+
+  if (confname && load_conf(fd) < 0)
+    return -1;
   if (write(fd, start_expr, strlen(start_expr)) < 0)
     return -1;
   if (argc) {
     if (write(fd, run_expr, strlen(run_expr)) < 0)
       return -1;
-    s = "(run-script [] [\"%s\"] %s)%s\n";
+    s = "(run-script [] \"%s\" %s)%s\n";
     n = snprintf(buf, sizeof(buf), s, argv[0], main_func, exit_expr);
     if (write(fd, buf, n) < 0)
       return -1;
@@ -81,13 +85,13 @@ eat_data(int from, int *pstarted)
     for (i = 0; i < rbytes && !started; ++i)
       switch (state) {
       case 0:
-        if (buf[i] == '\n' || buf[i] == '\r')
+        if (buf[i] == '\n')
           state = 1;
         else
           state = 0;
         break;
       case 1:
-        if (buf[i] == '\n' || buf[i] == '\r')
+        if (buf[i] == '\n')
           break;
       case 2:
       case 3:
@@ -95,12 +99,8 @@ eat_data(int from, int *pstarted)
           ++state;
         else
           state = 0;
-        break;
-      case 4:
-        if (buf[i] == '\n' || buf[i] == '\r')
+        if (state == 4)
           started = 1;
-        else
-          state = 0;
         break;
       default: state = 0;
       }
@@ -180,6 +180,8 @@ main(int argc, char **argv)
       break;
     else if (strcmp(argv[i], "-h") == 0)
       usage(argv[0]);
+    else if (strcmp(argv[i], "-nc") == 0)
+      confname = 0;
     else
       break;
   signal(SIGINT, handle_sigint);

@@ -13,5 +13,10 @@ install:
 clean:
 	-rm $(dst) 2>/dev/null
 
+config.h:
+	cp config.def.h $@
+
+shen_run: shen_run.c config.h
+
 %: %.c
 	$(CC) $(CFLAGS) $< $(LDFLAGS) -o $@
