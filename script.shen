@@ -1,9 +1,8 @@
-(package run- [*stoutput* shen-*hush* shen-hushed main]
-
-(synonyms main-fn ((list string) --> boolean))
+(package script- [*stoutput* shen-*hush* shen-hushed main]
 
 (set *null* "/dev/null")
 (set *error* "shen_err.log")
+(set args [])
 
 (define call-with-saving-stoutput
   F -> (let stdout (value *stoutput*)
@@ -27,8 +26,10 @@
                               - (close F)
                            _))))
 
-(define script
-  {(list string) --> (list string) --> main-fn --> boolean}
+(define add-arg
+  X -> (set args [X | (value args)]))
+
+(define execute
   Args File Main -> (call-with-error-file
                       (let - (call-with-null-output (freeze (load File)))
                            - (set shen-*hush* shen-hushed)

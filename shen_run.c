@@ -18,13 +18,40 @@ pid_t pid;
 void
 usage(const char *argv0)
 {
-  fprintf(stderr, "Usage: %s [-nc] [file.shen]\n", argv0);
+  fprintf(stderr, "Usage: %s [-nc] [file.shen] [args...]\n", argv0);
+}
+
+void
+write_arg(int fd, const char *arg)
+{
+  int i, j = 0, n, x;
+  static char buf[1024];
+
+  for (i = 0; *arg; ++i, ++arg) {
+    switch (*arg) {
+      case 0: case '"': case '\n': case '\r': case '\\':
+        n = 5;
+        break;
+      default:
+        n = 1;
+        buf[j++] = *arg;
+    }
+    if (j + n >= sizeof(buf)) {
+      write(fd, buf, j);
+      j = 0;
+    }
+    if (n > 1)
+      j += snprintf(buf + j, sizeof(buf) - j, "c#%d;", *arg);
+  }
+  if (j)
+    write(fd, buf, j);
 }
 
 int
 load_conf(int fd)
 {
-  char buf[1024], *home, fbuf[1024], *fname = conf;
+  static char buf[1024], fbuf[1024];
+  char *home, *fname = conf;
   int n;
 
   if (!fname) {
@@ -46,7 +73,7 @@ int
 init_shen(int fd, int argc, char **argv)
 {
   char buf[1024], *s;
-  int n;
+  int i, n;
 
   if (confname && load_conf(fd) < 0)
     return -1;
@@ -55,7 +82,14 @@ init_shen(int fd, int argc, char **argv)
   if (argc) {
     if (write(fd, run_expr, strlen(run_expr)) < 0)
       return -1;
-    s = "(run-script [] \"%s\" %s)%s\n";
+    for (i = 1; i < argc; ++i) {
+      s = "(script-add-arg \"";
+      write(fd, s, strlen(s));
+      write_arg(fd, argv[i]);
+      s = "\")";
+      write(fd, s, strlen(s));
+    }
+    s = "(script-execute (reverse (value script-args)) \"%s\" %s)%s\n";
     n = snprintf(buf, sizeof(buf), s, argv[0], main_func, exit_expr);
     if (write(fd, buf, n) < 0)
       return -1;
