@@ -11,14 +11,14 @@ install:
 	install -m 644 shen_run.1 $(mandir)/man1
 
 clean:
-	rm -f run.h $(dst) 2>/dev/null
+	rm -f script.h $(dst) 2>/dev/null
 
 config.h:
 	cp config.def.h $@
 
-shen_run: shen_run.c config.h run.h
+shen_run: shen_run.c config.h script.h
 
-run.h: run.shen
+script.h: script.shen
 	./mkrun <$< >$@
 
 %: %.c

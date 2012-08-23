@@ -11,7 +11,7 @@
 #include <signal.h>
 
 #include "config.h"
-#include "run.h"
+#include "script.h"
 
 pid_t pid;
 
