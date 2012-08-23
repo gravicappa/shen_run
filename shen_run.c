@@ -27,14 +27,14 @@ load_conf(int fd)
   char buf[1024], *home, fbuf[1024], *fname = conf;
   int n;
 
-  if (!conf) {
+  if (!fname) {
     home = getenv("HOME");
     if (!home)
       return -1;
-    snprintf(fbuf, sizeof(fbuf), "%s/%s", home, conf);
+    snprintf(fbuf, sizeof(fbuf), "%s/%s", home, confname);
     fname = fbuf;
   }
-  if (!access(fname, R_OK))
+  if (access(fname, R_OK))
     return 0;
   n = snprintf(buf, sizeof(buf), "(load \"%s\")\n", fname);
   if (write(fd, buf, n) < 0)
