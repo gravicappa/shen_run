@@ -1,0 +1,21 @@
+#!/bin/sh
+
+awk '
+BEGIN {printf("const char *run_expr = \"\"")}
+
+/set \*null\*/ {
+	printf("\n\"(set *null* \\\"\" DEVNULL \"\\\")\\n\"")
+	next
+}
+
+/set \*error\*/ {
+	printf("\n\"(set *error* \\\"\" ERRFILE \"\\\")\\n\"")
+	next
+}
+
+{
+	gsub(/"/, "\\\"")
+	printf("\n\"%s\\n\"", $0)
+}
+
+END {print(";")}'

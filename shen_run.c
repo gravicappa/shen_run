@@ -10,6 +10,7 @@
 #include <signal.h>
 
 #include "config.h"
+#include "run.h"
 
 pid_t pid;
 
