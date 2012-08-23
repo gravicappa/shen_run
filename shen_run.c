@@ -89,7 +89,9 @@ init_shen(int fd, int argc, char **argv)
       s = "\")";
       write(fd, s, strlen(s));
     }
-    s = "(script-execute (reverse (value script-args)) \"%s\" %s)%s\n";
+    s = "(let Ecode "
+        "(if (script-execute (reverse (value script-args))" "\"%s\" %s) 0 1)"
+        "%s)\n";
     n = snprintf(buf, sizeof(buf), s, argv[0], main_func, exit_expr);
     if (write(fd, buf, n) < 0)
       return -1;
