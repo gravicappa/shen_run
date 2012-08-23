@@ -1,0 +1,7 @@
+Command line tool for running Shen repl.
+
+* It loads ~/.shen.shen initialization file. Which is convenient for modulesys
+	users.
+
+* If passed a script name it executes script suppressing diagnostic messages
+	from Shen.
