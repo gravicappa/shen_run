@@ -1,0 +1,33 @@
+.Dd June 20, 2012
+.Dt SHEN_RUN 1 1
+.Os
+.Sh NAME
+
+.Nm shen_run
+.Nd Shen repl trampoline
+
+.Sh SYNOPSIS
+.Nm
+.Op Ar script
+
+.Sh DESCRIPTION
+Starts 
+.Sq shen 
+and loads 
+.Pa ~/.shen.shen .
+If
+.Ar script
+is given then loads that file and runs
+.Ql main
+function defined there discarding all diagnostic messages. Only
+.Ql output
+strings are displayed. Function
+.Ql main
+receives a list of command line arguments as a first parameter.
+
+.Ss Example script contents
+
+.Bd -literal
+(define main
+  Args -> (output "~A~%" (length Args)))
+.Ed
