@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/select.h>
+#include <sys/wait.h>
 #include <fcntl.h>
 #include <pty.h>
 #include <unistd.h>
@@ -23,26 +24,29 @@ usage(const char *argv0)
 int
 load_conf(int fd)
 {
-  char buf[1024], *home;
+  char buf[1024], *home, fbuf[1024], *fname = conf;
   int n;
 
-  if (conf)
-    n = snprintf(buf, sizeof(buf), "(load \"%s\")\n", conf);
-  else {
+  if (!conf) {
     home = getenv("HOME");
     if (!home)
       return -1;
-    n = snprintf(buf, sizeof(buf), "(load \"%s/%s\")\n", home, confname);
+    snprintf(fbuf, sizeof(fbuf), "%s/%s", home, conf);
+    fname = fbuf;
   }
+  if (!access(fname, R_OK))
+    return 0;
+  n = snprintf(buf, sizeof(buf), "(load \"%s\")\n", fname);
   if (write(fd, buf, n) < 0)
     return -1;
+  return 0;
 }
 
 int
 init_shen(int fd, int argc, char **argv)
 {
   char buf[1024], *s;
-  int i, n = 0;
+  int n;
 
   if (confname && load_conf(fd) < 0)
     return -1;
@@ -64,11 +68,11 @@ int
 pump_data(int from, int to)
 {
   char buf[1024];
-  size_t read_bytes, written_bytes = 0;
+  size_t read_bytes;
 
   read_bytes = read(from, buf, sizeof(buf));
   if (read_bytes > 0) {
-    written_bytes = write(to, buf, read_bytes);
+    write(to, buf, read_bytes);
     fsync(to);
   }
   return read_bytes;
@@ -113,7 +117,7 @@ int
 serve_process(int fd, int initialized)
 {
   fd_set fds;
-  int res, m;
+  int res;
 
   for (;;) {
     FD_ZERO(&fds);

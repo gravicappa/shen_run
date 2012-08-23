@@ -8,6 +8,7 @@
 
 .Sh SYNOPSIS
 .Nm
+.Op Fl nc
 .Op Ar script
 
 .Sh DESCRIPTION
@@ -29,5 +30,5 @@ receives a list of command line arguments as a first parameter.
 
 .Bd -literal
 (define main
-  Args -> (output "~A~%" (length Args)))
+  Args -> (output "number of arguments ~A~%" (length Args)))
 .Ed
