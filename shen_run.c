@@ -18,6 +18,7 @@ pid_t pid;
 char *err_name = 0;
 int err = -1;
 int err_bytes = 0;
+int exit_on_eof = 1;
 
 char *err_expr = ""
 "(define shen-run-call-with-err\n"
@@ -31,7 +32,7 @@ char *err_expr = ""
 void
 usage(const char *argv0)
 {
-  fprintf(stderr, "Usage: %s [-nc] [file.shen] [args...]\n", argv0);
+  fprintf(stderr, "Usage: %s [-nc] [-ne] [file.shen] [args...]\n", argv0);
 }
 
 void
@@ -216,19 +217,23 @@ int
 serve_process(int fd, int err, int initialized)
 {
   fd_set fds;
-  int res;
+  int res, stdin_closed = 0;
 
   for (;;) {
     FD_ZERO(&fds);
-    FD_SET(0, &fds);
+    if (!stdin_closed)
+      FD_SET(0, &fds);
     FD_SET(fd, &fds);
     FD_SET(err, &fds);
 
     res = select(((fd > err) ? fd : err) + 1, &fds, 0, 0, 0);
     if (res > 0) {
       if (FD_ISSET(0, &fds)) {
-        if (pump_data(0, fd) <= 0)
-          break;
+        if (pump_data(0, fd) <= 0) {
+          stdin_closed = 1;
+          if (exit_on_eof)
+            break;
+        }
       }
       if (FD_ISSET(err, &fds)) {
         if (pump_error(err, 2) <= 0)
@@ -292,6 +297,8 @@ main(int argc, char **argv)
       usage(argv[0]);
     else if (strcmp(argv[i], "-nc") == 0)
       confname = 0;
+    else if (strcmp(argv[i], "-ne") == 0)
+      exit_on_eof = 0;
     else
       break;
   signal(SIGINT, handle_sigint);
