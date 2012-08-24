@@ -1,4 +1,6 @@
 dst = shen_run
+
+CFLAGS = -Wall
 LDFLAGS += -lutil
 destdir=/usr/local
 bindir=$(destdir)/bin

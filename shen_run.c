@@ -4,6 +4,7 @@
 #include <string.h>
 #include <sys/select.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 #include <pty.h>
 #include <unistd.h>
@@ -14,6 +15,18 @@
 #include "script.h"
 
 pid_t pid;
+char *err_name = 0;
+int err = -1;
+int err_bytes = 0;
+
+char *err_expr = ""
+"(define shen-run-call-with-err\n"
+"  F -> (trap-error (thaw F)\n"
+"                   (/. E (let F (open file (value shen-run-error) out)\n"
+"                              - (pr (error-to-string E) F)\n"
+"                              - (pr (n->string (shen-newline)) F)\n"
+"                              - (close F)\n"
+"                           %s))))\n";
 
 void
 usage(const char *argv0)
@@ -22,36 +35,50 @@ usage(const char *argv0)
 }
 
 void
-write_arg(int fd, const char *arg)
+write_escaped(int fd, const char *s)
 {
-  int i, j = 0, n, x;
+  int i, j = 0, n;
   static char buf[1024];
 
-  for (i = 0; *arg; ++i, ++arg) {
-    switch (*arg) {
+  for (i = 0; *s; ++i, ++s) {
+    switch (*s) {
       case 0: case '"': case '\n': case '\r': case '\\':
         n = 5;
         break;
       default:
         n = 1;
-        buf[j++] = *arg;
+        buf[j++] = *s;
     }
     if (j + n >= sizeof(buf)) {
       write(fd, buf, j);
       j = 0;
     }
     if (n > 1)
-      j += snprintf(buf + j, sizeof(buf) - j, "c#%d;", *arg);
+      j += snprintf(buf + j, sizeof(buf) - j, "c#%d;", *s);
   }
   if (j)
     write(fd, buf, j);
 }
 
 int
+init_err_fd()
+{
+  static char buf[256];
+  if (!err_name) {
+    snprintf(buf, sizeof(buf), "%s", err_tpl);
+    err_name = mktemp(buf);
+  }
+  if (mkfifo(err_name, S_IRWXU))
+    return -1;
+  err = open(err_name, O_RDONLY | O_NONBLOCK, 0);
+  return 0;
+}
+
+int
 load_conf(int fd)
 {
   static char buf[1024], fbuf[1024];
-  char *home, *fname = conf;
+  char *home, *fname = conf, *s;
   int n;
 
   if (!fname) {
@@ -63,7 +90,8 @@ load_conf(int fd)
   }
   if (access(fname, R_OK))
     return 0;
-  n = snprintf(buf, sizeof(buf), "(load \"%s\")\n", fname);
+  s = "(shen-run-call-with-err (freeze (load \"%s\")))\n";
+  n = snprintf(buf, sizeof(buf), s, fname);
   if (write(fd, buf, n) < 0)
     return -1;
   return 0;
@@ -72,8 +100,22 @@ load_conf(int fd)
 int
 init_shen(int fd, int argc, char **argv)
 {
-  char buf[1024], *s;
+  static char buf[1024];
+  char *s;
   int i, n;
+
+  if (init_err_fd())
+    return -1;
+
+  s = "(set shen-run-error \"";
+  write(fd, s, strlen(s));
+  write_escaped(fd, err_name);
+  s = "\")\n";
+  write(fd, s, strlen(s));
+
+  n = snprintf(buf, sizeof(buf), err_expr, exit_expr);
+  if (write(fd, buf, n) < 0)
+    return -1;
 
   if (confname && load_conf(fd) < 0)
     return -1;
@@ -83,15 +125,14 @@ init_shen(int fd, int argc, char **argv)
     if (write(fd, run_expr, strlen(run_expr)) < 0)
       return -1;
     for (i = 1; i < argc; ++i) {
-      s = "(script-add-arg \"";
+      s = "(shen-run-add-arg \"";
       write(fd, s, strlen(s));
-      write_arg(fd, argv[i]);
-      s = "\")";
+      write_escaped(fd, argv[i]);
+      s = "\")\n";
       write(fd, s, strlen(s));
     }
-    s = "(let Ecode "
-        "(if (script-execute (reverse (value script-args))" "\"%s\" %s) 0 1)"
-        "%s)\n";
+    s = "(shen-run-execute (reverse (value shen-run-args)) \"%s\" %s)\n"
+        "(%s)\n";
     n = snprintf(buf, sizeof(buf), s, argv[0], main_func, exit_expr);
     if (write(fd, buf, n) < 0)
       return -1;
@@ -103,12 +144,31 @@ init_shen(int fd, int argc, char **argv)
 int
 pump_data(int from, int to)
 {
-  char buf[1024];
+  static char buf[1024];
   size_t read_bytes;
 
   read_bytes = read(from, buf, sizeof(buf));
   if (read_bytes > 0) {
     write(to, buf, read_bytes);
+    fsync(to);
+  }
+  return read_bytes;
+}
+
+int
+pump_error(int from, int to)
+{
+  static char buf[256];
+  size_t read_bytes, i = 0;
+
+  read_bytes = read(from, buf, sizeof(buf));
+  if (read_bytes > 0) {
+    i = (!err_bytes && buf[0] == '\n') ? 1 : 0;
+    if (!err_bytes && i == 0) {
+      write(to, err_prefix, strlen(err_prefix));
+    }
+    err_bytes += read_bytes - i;
+    write(to, buf + i, read_bytes - i);
     fsync(to);
   }
   return read_bytes;
@@ -150,7 +210,7 @@ eat_data(int from, int *pstarted)
 }
 
 int
-serve_process(int fd, int initialized)
+serve_process(int fd, int err, int initialized)
 {
   fd_set fds;
   int res;
@@ -159,12 +219,18 @@ serve_process(int fd, int initialized)
     FD_ZERO(&fds);
     FD_SET(0, &fds);
     FD_SET(fd, &fds);
+    FD_SET(err, &fds);
 
-    res = select(fd + 1, &fds, 0, 0, 0);
+    res = select(((fd > err) ? fd : err) + 1, &fds, 0, 0, 0);
     if (res > 0) {
       if (FD_ISSET(0, &fds)) {
         if (pump_data(0, fd) <= 0)
           break;
+      }
+      if (FD_ISSET(err, &fds)) {
+        if (pump_error(err, 2) <= 0)
+          if (init_err_fd())
+            break;
       }
       if (FD_ISSET(fd, &fds)) {
         if (initialized) {
@@ -242,10 +308,16 @@ main(int argc, char **argv)
 
       default:
         init_shen(fd, argc - i, argv + i);
-        serve_process(fd, argc == i);
+        serve_process(fd, err, argc == i);
         ret = 0;
         close(fd);
         wait(0);
+        if (err_bytes)
+          ret = 1;
+        if (err >= 0)
+          close(err);
+        if (err_name)
+          remove(err_name);
     }
   } else
     usage(argv[0]);

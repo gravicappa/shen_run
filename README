@@ -2,7 +2,7 @@ Command line tool for running Shen repl.
 
 	It loads `~/.shen.shen` initialization file. Which is convenient for
 modulesys users. It can execute Shen scripts allowing them to access command
-line arguments.
+line arguments. Error output is written to stderr.
 
 ## Installing
 
