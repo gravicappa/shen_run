@@ -9,7 +9,7 @@ line arguments. Error output is written to stderr.
   Copy `config.def.h` into `config.h`. Edit `config.h` to match your
 configuration. Type
 
-  make
+    make
 
 to build `shen_run`.
 
@@ -19,19 +19,19 @@ to build `shen_run`.
 parameters in one argument of type `(list string)` and returns a boolean
 indicating success status. You can run that script either by typing
 
-  shen_run your_script.shen argument1 argument2 ...
+    shen_run your_script.shen argument1 argument2 ...
 
 Or you can add a line 
 
-  #!/usr/bin/env shen_run
+    #!/usr/bin/env shen_run
 
 at the first line of your script and make file executable
 
-  chmod +x your_script.shen
+    chmod +x your_script.shen
 
 Then you can run it as any other program:
 
-  ./your_script.shen argument1 argument2 ...
+    ./your_script.shen argument1 argument2 ...
 
 ### Example
 
@@ -41,8 +41,11 @@ Then you can run it as any other program:
       [] _ -> _
       [X | R] I -> (let - (output "  ~A: ~S~%" I X)
                       (show-args R (+ I 1))))
-
+    
     (define main
+      [] -> (error "Not enough arguments.")
+      ["-preved" | _] -> false
       Args -> (let - (output "Arguments~%")
                    - (show-args Args 0)
-                (output "End~%")))
+                (output "End~%")
+                true))
