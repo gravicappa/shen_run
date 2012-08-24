@@ -121,6 +121,10 @@ init_shen(int fd, int argc, char **argv)
     return -1;
   if (write(fd, start_expr, strlen(start_expr)) < 0)
     return -1;
+  s = "(define shen-run-exit -> %s)\n";
+  n = snprintf(buf, sizeof(buf), s, exit_expr);
+  if (write(fd, buf, n) < 0)
+    return -1;
   if (argc) {
     if (write(fd, run_expr, strlen(run_expr)) < 0)
       return -1;
@@ -131,9 +135,8 @@ init_shen(int fd, int argc, char **argv)
       s = "\")\n";
       write(fd, s, strlen(s));
     }
-    s = "(shen-run-execute (reverse (value shen-run-args)) \"%s\" %s)\n"
-        "(%s)\n";
-    n = snprintf(buf, sizeof(buf), s, argv[0], main_func, exit_expr);
+    s = "(shen-run-execute (reverse (value shen-run-args)) \"%s\" %s)\n";
+    n = snprintf(buf, sizeof(buf), s, argv[0], main_func);
     if (write(fd, buf, n) < 0)
       return -1;
   }
