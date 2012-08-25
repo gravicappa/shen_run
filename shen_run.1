@@ -9,31 +9,52 @@
 .Sh SYNOPSIS
 .Nm
 .Op Fl nc
+.Op Fl ne
 .Op Ar script
 .Bk -words
-.Op Ar args ...
+.Op Ar args...
 .Ek
 
 .Sh DESCRIPTION
-Starts 
-.Sq shen 
-and loads 
-.Pa ~/.shen.shen .
-If
+.Nm
+starts
+.Sq shen
+and loads
+.Pa ~/.shen.shen
+if the file exists and 
+.Ar -nc
+is not set. If
 .Ar script
-is given then loads that file and runs
+file is given then
+.Nm
+loads it and calls
 .Ql main
-function defined there discarding all diagnostic messages. Only
-.Ql output
-strings are displayed. Function
+function defined there discarding all diagnostic messages. Only output strings
+and error messages are printed to
+.Ql stdout 
+and 
+.Ql stderr
+accordingly. Function
 .Ql main
-receives a list of command line arguments 
-.Ql args
-as a first parameter.
+receives a list of command line arguments
+.Ql ( args... )
+and must return a boolean status of success.
+
+The flags are as follows:
+.Bl -tag -offset indent
+.It Fl nc
+Don't load config file
+.Pa ( ~/.shen.shen )
+.It Fl ne
+Don't exit on end-of-file in standard input.
+.El
 
 .Ss Example script contents
-
 .Bd -literal
 (define main
-  Args -> (output "number of arguments ~A~%" (length Args)))
+  [] -> (do (output "no arguments~%")
+            false)
+  ["-error" | _] -> (error "Oops.")
+  Args -> (do (output "~A arguments~%" (length Args))
+              true))
 .Ed
