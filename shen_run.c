@@ -120,11 +120,11 @@ init_shen(int fd, int argc, char **argv)
 
   if (confname && load_conf(fd) < 0)
     return -1;
-  if (write(fd, start_expr, strlen(start_expr)) < 0)
-    return -1;
   s = "(define shen-run-exit -> %s)\n";
   n = snprintf(buf, sizeof(buf), s, exit_expr);
   if (write(fd, buf, n) < 0)
+    return -1;
+  if (write(fd, start_expr, strlen(start_expr)) < 0)
     return -1;
   if (argc) {
     if (write(fd, run_expr, strlen(run_expr)) < 0)
