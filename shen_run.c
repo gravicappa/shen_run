@@ -21,11 +21,11 @@ int err_bytes = 0;
 int exit_on_eof = 1;
 
 char *err_expr = ""
-"(define shen-run-call-with-err\n"
+"(define shen-run.call-with-err\n"
 "  F -> (trap-error (thaw F)\n"
-"                   (/. E (let F (open file (value shen-run-error) out)\n"
+"                   (/. E (let F (open file (value shen-run.error) out)\n"
 "                              - (pr (error-to-string E) F)\n"
-"                              - (pr (n->string (shen-newline)) F)\n"
+"                              - (pr (n->string (shen.newline)) F)\n"
 "                              - (close F)\n"
 "                           %s))))\n";
 
@@ -91,7 +91,7 @@ load_conf(int fd)
   }
   if (access(fname, R_OK))
     return 0;
-  s = "(shen-run-call-with-err (freeze (load \"%s\")))\n";
+  s = "(shen-run.call-with-err (freeze (load \"%s\")))\n";
   n = snprintf(buf, sizeof(buf), s, fname);
   if (write(fd, buf, n) < 0)
     return -1;
@@ -108,7 +108,7 @@ init_shen(int fd, int argc, char **argv)
   if (init_err_fd())
     return -1;
 
-  s = "(set shen-run-error \"";
+  s = "(set shen-run.error \"";
   write(fd, s, strlen(s));
   write_escaped(fd, err_name);
   s = "\")\n";
@@ -120,7 +120,7 @@ init_shen(int fd, int argc, char **argv)
 
   if (confname && load_conf(fd) < 0)
     return -1;
-  s = "(define shen-run-exit -> %s)\n";
+  s = "(define shen-run.exit -> %s)\n";
   n = snprintf(buf, sizeof(buf), s, exit_expr);
   if (write(fd, buf, n) < 0)
     return -1;
@@ -130,13 +130,13 @@ init_shen(int fd, int argc, char **argv)
     if (write(fd, run_expr, strlen(run_expr)) < 0)
       return -1;
     for (i = 1; i < argc; ++i) {
-      s = "(shen-run-add-arg \"";
+      s = "(shen-run.add-arg \"";
       write(fd, s, strlen(s));
       write_escaped(fd, argv[i]);
       s = "\")\n";
       write(fd, s, strlen(s));
     }
-    s = "(shen-run-execute (reverse (value shen-run-args)) \"%s\" %s)\n";
+    s = "(shen-run.execute (reverse (value shen-run.args)) \"%s\" %s)\n";
     n = snprintf(buf, sizeof(buf), s, argv[0], main_func);
     if (write(fd, buf, n) < 0)
       return -1;
@@ -198,13 +198,12 @@ eat_data(int from, int *pstarted)
       case 1:
         if (buf[i] == '\n')
           break;
-      case 2:
-      case 3:
+      case 2: case 3: case 4: case 5: case 6:
         if (buf[i] == '"')
           ++state;
         else
           state = 0;
-        if (state == 4)
+        if (state == 6)
           started = 1;
         break;
       default: state = 0;
@@ -285,6 +284,22 @@ handle_sigint(int sig)
   kill(pid, SIGINT);
 }
 
+void
+handle_sighup(int sig)
+{
+  fprintf(stderr , "* sighup\n");
+  if (err >= 0) {
+    close(err);
+    err = -1;
+  }
+  if (err_name) {
+    remove(err_name);
+    err_name = 0;
+  }
+  kill(0, sig);
+  exit(1);
+}
+
 int
 main(int argc, char **argv)
 {
@@ -293,8 +308,10 @@ main(int argc, char **argv)
   for (i = 1; i < argc; ++i)
     if (strcmp(argv[i], "--") == 0)
       break;
-    else if (strcmp(argv[i], "-h") == 0)
+    else if (strcmp(argv[i], "-h") == 0) {
       usage(argv[0]);
+      return 1;
+    }
     else if (strcmp(argv[i], "-nc") == 0)
       confname = 0;
     else if (strcmp(argv[i], "-ne") == 0)
@@ -308,15 +325,16 @@ main(int argc, char **argv)
     switch ((pid = forkpty(&fd, 0, 0, 0))) {
       case -1:
         perror("forkpty");
-        return -1;
+        return 1;
 
       case 0:
         set_noecho(0);
         execvp(command[0], command);
         perror("exec");
-        return -1;
+        return 1;
 
       default:
+        signal(SIGHUP, handle_sighup);
         init_shen(fd, argc - i, argv + i);
         serve_process(fd, err, argc == i);
         ret = 0;

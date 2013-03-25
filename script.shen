@@ -1,4 +1,4 @@
-(package shen-run- [*stoutput* shen-*hush* shen-hushed main]
+(package shen-run [*stoutput* shen.*hush* shen.hushed main out]
 
 (set *null* "/dev/null")
 (set args [])
@@ -25,12 +25,12 @@
   Args File Main -> (call-with-err
                       (freeze
                         (let - (call-with-null-output (freeze (load File)))
-                             - (set shen-*hush* shen-hushed)
-                             - (output "c#34;c#34;c#34;~%")
+                             - (set shen.*hush* shen.hushed)
+                             - (output "~%c#34;c#34;c#34;c#34;c#34;")
                              Ret (if (empty? Main)
                                      (main Args)
                                      (Main Args))
                             - (if Ret
-                                  (shen-run-exit)
+                                  (shen-run.exit)
                                   (error "c#10;"))
                           Ret)))))
