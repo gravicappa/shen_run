@@ -31,6 +31,6 @@
                                      (main Args)
                                      (Main Args))
                             - (if Ret
-                                  (shen-run.exit)
+                                  (exit)
                                   (error "c#10;"))
                           Ret)))))

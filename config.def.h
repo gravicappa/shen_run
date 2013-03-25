@@ -12,7 +12,7 @@ char *exit_expr = "((protect QUIT))\n";
 /* Error message prefix */
 char *err_prefix = "\nError: ";
 
-char *start_expr = "(set shen-*history* [])\n";
+char *start_expr = "(set shen.*history* [])\n";
 char *main_func = "main";
 char *err_tpl = "/tmp/shen_run.XXXXXX";
 char *conf = 0;
