@@ -1,4 +1,4 @@
-(package shen-run [*stoutput* shen.*hush* shen.hushed main out]
+(package shen-run [*stoutput* shen.*hush* shen.hushed main out in]
 
 (set *null* "/dev/null")
 (set args [])

@@ -6,12 +6,17 @@ line arguments. Error output is written to stderr.
 
 ## Installing
 
-  Copy `config.def.h` into `config.h`. Edit `config.h` to match your
-configuration. Type
+  For each shen implementation you can build separate version of shen_run.
+If you wan't to build shen_run for shen-clisp then
 
-    make
+    mkdir clisp
+    cp config.def.h clisp/config.h.
+    
+Edit `clisp/config.h` to match your configuration. Then type
 
-to build `shen_run`.
+    make impl=clisp
+
+to build `shen_run.clisp`.
 
 ## Using
 

@@ -1,14 +1,14 @@
 name = shen_run
-cfgdir = .
+impl = clisp
 
 CFLAGS = -Wall
-CFLAGS += -I$(cfgdir)
+CFLAGS += -I$(impl)
 LDFLAGS += -lutil
 destdir=/usr/local
 bindir=$(destdir)/bin
 mandir=$(destdir)/share/man
 
-all: $(name)
+all: $(name).$(impl)
 
 install:
 	install -m 755 $(name) $(bindir)
@@ -17,10 +17,11 @@ install:
 clean:
 	rm -f script.h $(name) 2>/dev/null
 
-$(cfgdir)/config.h:
+$(impl)/config.h:
+	mkdir -p $(impl)
 	test -f $@ || cp config.def.h $@
 
-$(name): shen_run.c $(cfgdir)/config.h script.h
+$(name).$(impl): shen_run.c $(impl)/config.h script.h
 	$(CC) $(CFLAGS) $< $(LDFLAGS) -o $@
 
 script.h: script.shen

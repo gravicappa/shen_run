@@ -1,3 +1,5 @@
 config.h
 script.h
 shen_run
+shen_run.c[a-z]*
+shen_run.[^c]*

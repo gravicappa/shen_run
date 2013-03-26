@@ -19,6 +19,7 @@ char *err_name = 0;
 int err = -1;
 int err_bytes = 0;
 int exit_on_eof = 1;
+int running = 1;
 
 char *err_expr = ""
 "(define shen-run.call-with-err\n"
@@ -218,7 +219,7 @@ serve_process(int fd, int err, int initialized)
   fd_set fds;
   int res, stdin_closed = 0;
 
-  for (;;) {
+  for (running = 1; running;) {
     FD_ZERO(&fds);
     if (!stdin_closed)
       FD_SET(0, &fds);
@@ -287,17 +288,8 @@ handle_sigint(int sig)
 void
 handle_sighup(int sig)
 {
-  fprintf(stderr , "* sighup\n");
-  if (err >= 0) {
-    close(err);
-    err = -1;
-  }
-  if (err_name) {
-    remove(err_name);
-    err_name = 0;
-  }
+  running = 0;
   kill(0, sig);
-  exit(1);
 }
 
 int
