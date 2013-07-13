@@ -13,7 +13,7 @@
 
 (define call-with-null-output
   F -> (call-with-saving-stoutput
-         (freeze (let - (set *stoutput* (open file (value *null*) out))
+         (freeze (let - (set *stoutput* (open (value *null*) out))
                       Ret (thaw F)
                       - (close (value *stoutput*))
                    Ret))))

@@ -24,7 +24,7 @@ int running = 1;
 char *err_expr = ""
 "(define shen-run.call-with-err\n"
 "  F -> (trap-error (thaw F)\n"
-"                   (/. E (let F (open file (value shen-run.error) out)\n"
+"                   (/. E (let F (open (value shen-run.error) out)\n"
 "                              - (pr (error-to-string E) F)\n"
 "                              - (pr (n->string (shen.newline)) F)\n"
 "                              - (close F)\n"
