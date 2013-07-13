@@ -6,7 +6,9 @@ char *confname = ".shen.shen";
 
 /* command to exit
   on Shen Common lisp it's ((protect QUIT))
-  on Shen JS it's (shenjs-exit) */
+  on Shen-js it's (shenjs.exit) 
+  on Shen-py it's (shenpy.exit) 
+  */
 char *exit_expr = "((protect QUIT))\n";
 
 /* Error message prefix */

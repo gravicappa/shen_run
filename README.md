@@ -16,7 +16,7 @@ Edit `clisp/config.h` to match your configuration. Then type
 
     make impl=clisp
 
-to build `shen_run.clisp`.
+to build `shen_run_clisp`.
 
 ## Using
 

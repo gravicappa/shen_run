@@ -8,7 +8,7 @@ destdir=/usr/local
 bindir=$(destdir)/bin
 mandir=$(destdir)/share/man
 
-all: $(name).$(impl)
+all: $(name)_$(impl)
 
 install:
 	install -m 755 $(name) $(bindir)
@@ -21,7 +21,7 @@ $(impl)/config.h:
 	mkdir -p $(impl)
 	test -f $@ || cp config.def.h $@
 
-$(name).$(impl): shen_run.c $(impl)/config.h script.h
+$(name)_$(impl): shen_run.c $(impl)/config.h script.h
 	$(CC) $(CFLAGS) $< $(LDFLAGS) -o $@
 
 script.h: script.shen

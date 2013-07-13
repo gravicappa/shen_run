@@ -289,7 +289,6 @@ void
 handle_sighup(int sig)
 {
   running = 0;
-  kill(0, sig);
 }
 
 int
