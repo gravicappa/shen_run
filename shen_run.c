@@ -128,6 +128,7 @@ init_shen(int fd, int argc, char **argv)
   if (write(fd, start_expr, strlen(start_expr)) < 0)
     return -1;
   if (argc) {
+    exit_on_eof = 0;
     if (write(fd, run_expr, strlen(run_expr)) < 0)
       return -1;
     for (i = 1; i < argc; ++i) {
