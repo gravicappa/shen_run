@@ -4,18 +4,20 @@ impl = clisp
 CFLAGS = -Wall
 CFLAGS += -I$(impl)
 LDFLAGS += -lutil
-destdir=/usr/local
-bindir=$(destdir)/bin
-mandir=$(destdir)/share/man
+prefix=/usr/local
+bindir=$(prefix)/bin
+mandir=$(prefix)/share/man
 
 all: $(name)_$(impl)
 
 install:
-	install -m 755 $(name) $(bindir)
-	install -m 644 shen_run.1 $(mandir)/man1
+	mkdir -p $(destdir)/$(bindir) $(destdir)/$(mandir)/man1
+	install -m 755 $(name)_$(impl) $(destdir)/$(bindir)
+	install -m 644 shen_run.1 $(destdir)/$(mandir)/man1
+	ln -s shen_run.1 $(destdir)/$(mandir)/man1/$(name)_$(impl).1
 
 clean:
-	rm -f script.h $(name) 2>/dev/null
+	rm -f script.h $(name)_$(impl) 2>/dev/null
 
 $(impl)/config.h:
 	mkdir -p $(impl)
