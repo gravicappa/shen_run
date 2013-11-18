@@ -52,5 +52,5 @@ Then you can run it as any other program:
       ["-preved" | _] -> false
       Args -> (let - (output "Arguments~%")
                    - (show-args Args 0)
-                (output "End~%")
+                   - (output "End~%")
                 true))
