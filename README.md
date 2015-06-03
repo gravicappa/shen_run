@@ -7,7 +7,7 @@ line arguments. Error output is written to stderr.
 ## Installing
 
   For each shen implementation you can build separate version of shen_run.
-If you wan't to build shen_run for shen-clisp then
+If you want to build shen_run for shen-clisp then
 
     mkdir clisp
     cp config.def.h clisp/config.h.
