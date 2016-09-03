@@ -1,0 +1,20 @@
+/* execv arguments to run Shen */
+char *command[] = {"shen-sbcl", "--control-stack-size", "20", 0};
+
+/* name of initialization file */
+char *confname = ".shen.shen";
+
+/* command to exit
+  on Shen Common lisp it's ((protect QUIT))
+  on Shen JS it's (shenjs.exit) */
+char *exit_expr = "((protect QUIT))\n";
+
+/* Error message prefix */
+char *err_prefix = "\nError: ";
+
+char *start_expr = "(set shen.*history* [])\n";
+char *main_func = "main";
+char *err_tpl = "/tmp/shen_run.XXXXXX";
+char *conf = 0;
+
+#define DEVNULL "/dev/null"
