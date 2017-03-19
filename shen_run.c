@@ -243,7 +243,7 @@ serve_process(int fd, int err, int initialized)
       }
       if (FD_ISSET(fd, &fds)) {
         if (initialized) {
-          if (pump_data(fd, 1) < 0)
+          if (pump_data(fd, 1) <= 0)
             break;
         } else {
           if (eat_data(fd, &initialized) < 0)
